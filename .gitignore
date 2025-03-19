@@ -5,7 +5,6 @@ node_modules
 .DS_STORE
 
 # Do not track build artifacts/generated files
-/dist
 /types
 /models
 
