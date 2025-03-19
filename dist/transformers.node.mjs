@@ -30011,6 +30011,64 @@ async function tryCache(cache, ...names) {
  * @returns {Promise<string|Uint8Array>} A Promise that resolves with the file content as a Uint8Array if `return_path` is false, or the file path as a string if `return_path` is true.
  */
 async function getModelFile(path_or_repo_id, filename, fatal = true, options = {}, return_path = false) {
+    // Check if path_or_repo_id is an absolute path to a model directory
+    const isAbsolutePath = path_or_repo_id.startsWith('/') || 
+                          (process.platform === 'win32' && /^[A-Z]:[\\\/]/.test(path_or_repo_id));
+    
+    // If it's an absolute path, use it directly as modelPath
+    if (isAbsolutePath) {
+        (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
+            status: 'initiate',
+            name: path_or_repo_id,
+            file: filename
+        });
+
+        // Form the absolute path to the file
+        let absoluteFilePath = path__WEBPACK_IMPORTED_MODULE_1__["default"].join(path_or_repo_id, filename);
+        
+        try {
+            // Check if file exists
+            if (fs__WEBPACK_IMPORTED_MODULE_0__["default"].existsSync(absoluteFilePath)) {
+                (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
+                    status: 'download',
+                    name: path_or_repo_id,
+                    file: filename
+                });
+
+                // If we need to return the path
+                if (return_path) {
+                    (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
+                        status: 'done',
+                        name: path_or_repo_id,
+                        file: filename
+                    });
+                    return absoluteFilePath;
+                }
+                
+                // Otherwise, read and return the file content
+                const fileContent = await fs__WEBPACK_IMPORTED_MODULE_0__["default"].promises.readFile(absoluteFilePath);
+                
+                (0,_core_js__WEBPACK_IMPORTED_MODULE_3__.dispatchCallback)(options.progress_callback, {
+                    status: 'done',
+                    name: path_or_repo_id,
+                    file: filename
+                });
+                
+                return new Uint8Array(fileContent.buffer);
+            } else if (fatal) {
+                throw Error(`Could not locate file at absolute path: "${absoluteFilePath}".`);
+            } else {
+                return null;
+            }
+        } catch (error) {
+            if (fatal) {
+                throw error;
+            }
+            return null;
+        }
+    }
+
+    // Original implementation for non-absolute paths follows...
 
     if (!_env_js__WEBPACK_IMPORTED_MODULE_2__.env.allowLocalModels) {
         // User has disabled local models, so we just make sure other settings are correct.
@@ -30256,14 +30314,12 @@ async function getModelFile(path_or_repo_id, filename, fatal = true, options = {
         return response.filePath;
     }
 
-    const path = await cache.match(cacheKey);
-    if (path instanceof FileResponse) {
-        return path.filePath;
+    const cachedPath = await cache.match(cacheKey);
+    if (cachedPath instanceof FileResponse) {
+        return cachedPath.filePath;
     }
     throw new Error("Unable to return path for response.");
-
 }
-
 /**
  * Fetches a JSON file from a given path and file name.
  *
