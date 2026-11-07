@@ -1008,7 +1008,7 @@ export function dynamic_time_warping(matrix) {
             if (c0 < c1 && c0 < c2) {
                 c = c0;
                 t = 0;
-            } else if (c1 < c0 && c1 < c2) {
+            } else if (c1 < c2) {
                 c = c1;
                 t = 1;
             } else {
