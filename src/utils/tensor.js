@@ -1123,9 +1123,10 @@ export function layer_norm(input, normalized_shape, {
 
     for (let i = 0; i < batchSize; ++i) {
         const offset = i * featureDim;
+        const denominator = Math.sqrt(stdData[i] ** 2 + eps);
         for (let j = 0; j < featureDim; ++j) {
             const offset2 = offset + j;
-            returnedData[offset2] = (inputData[offset2] - meanData[i]) / (stdData[i] + eps);
+            returnedData[offset2] = (inputData[offset2] - meanData[i]) / denominator;
         }
     }
     return new Tensor(input.type, returnedData, input.dims);
