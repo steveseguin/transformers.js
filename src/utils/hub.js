@@ -381,9 +381,11 @@ async function tryCache(cache, ...names) {
  * @returns {Promise<string|Uint8Array>} A Promise that resolves with the file content as a Uint8Array if `return_path` is false, or the file path as a string if `return_path` is true.
  */
 export async function getModelFile(path_or_repo_id, filename, fatal = true, options = {}, return_path = false) {
-    // Check if path_or_repo_id is an absolute path to a model directory
-    const isAbsolutePath = path_or_repo_id.startsWith('/') || 
-                          (process.platform === 'win32' && /^[A-Z]:[\\\/]/.test(path_or_repo_id));
+    // Filesystem paths are only meaningful in Node.js with filesystem access.
+    const isAbsolutePath = apis.IS_NODE_ENV && env.useFS && (
+        path_or_repo_id.startsWith('/') ||
+        (process.platform === 'win32' && /^[A-Z]:[\\\/]/.test(path_or_repo_id))
+    );
     
     // If it's an absolute path, use it directly as modelPath
     if (isAbsolutePath) {
